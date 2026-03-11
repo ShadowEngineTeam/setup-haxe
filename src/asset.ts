@@ -32,7 +32,7 @@ abstract class Asset {
   protected abstract get isDirectoryNested(): boolean;
 
   protected makeDownloadUrl(path: string) {
-    return `https://github.com/HaxeFoundation${path}`;
+    return `https://github.com/ShadowEngineTeam{path}`;
   }
 
   protected get fileExt(): AssetFileExt {
