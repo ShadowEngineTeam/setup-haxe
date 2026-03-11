@@ -135,14 +135,14 @@ abstract class Asset {
   }
 }
 
-// * NOTE https://github.com/HaxeFoundation/neko/releases/download/v2-4-0/neko-2.4.0-linux64.tar.gz
-// * NOTE https://github.com/HaxeFoundation/neko/releases/download/v2-4-0/neko-2.4.0-osx-universal.tar.gz
-// * NOTE https://github.com/HaxeFoundation/neko/releases/download/v2-4-0/neko-2.4.0-win64.zip
+// * NOTE https://github.com/ShadowEngineTeam/neko/releases/download/v2-4-1/neko-2.4.0-linux64.tar.gz
+// * NOTE https://github.com/ShadowEngineTeam/neko/releases/download/v2-4-1/neko-2.4.0-osx-universal.tar.gz
+// * NOTE https://github.com/ShadowEngineTeam/neko/releases/download/v2-4-1/neko-2.4.0-win64.zip
 export class NekoAsset extends Asset {
   static resolveFromHaxeVersion(version: string) {
     // Haxe older than 4.3 has issues with mbedtls 3 in neko 2.4
     const nekoVer = version.startsWith('3.') || (version.startsWith('4.') && version < '4.3.') ? '2.3.0'
-      : '2.4.0';
+      : '2.4.1';
     const env = new Env();
     // Haxe 3 on windows has 32 bit haxelib, which requires 32 bit neko
     const force32 = version.startsWith('3.') && env.platform === 'win';
@@ -186,8 +186,8 @@ export class NekoAsset extends Asset {
   }
 }
 
-// * NOTE https://github.com/HaxeFoundation/haxe/releases/download/4.0.5/haxe-4.0.5-linux64.tar.gz
-// * NOTE https://github.com/HaxeFoundation/haxe/releases/download/3.4.7/haxe-3.4.7-win64.zip
+// * NOTE https://github.com/ShadowEngineTeam/haxe/releases/download/4.0.5/haxe-4.0.5-linux64.tar.gz
+// * NOTE https://github.com/ShadowEngineTeam/haxe/releases/download/3.4.7/haxe-3.4.7-win64.zip
 // * NOTE https://build.haxe.org/builds/haxe/mac/haxe_latest.tar.gz
 export class HaxeAsset extends Asset {
   nightly = false;
