@@ -1,6 +1,5 @@
 # setup-haxe
 
-[![Build Status](https://github.com/krdlab/setup-haxe/actions/workflows/test.yml/badge.svg "GitHub Actions")](https://github.com/krdlab/setup-haxe/actions/workflows/test.yml)
 [![License](https://img.shields.io/github/license/krdlab/setup-haxe.svg?label=license)](#license)
 
 This action sets up a Haxe environment for use in your workflows.
@@ -15,8 +14,8 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: krdlab/setup-haxe@v2
+      - uses: actions/checkout@v5
+      - uses: ShadowEngineTeam/setup-haxe@main
         with:
           haxe-version: 4.3.7
       - run: |
@@ -30,8 +29,8 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: krdlab/setup-haxe@v2
+      - uses: actions/checkout@v5
+      - uses: ShadowEngineTeam/setup-haxe@main
         with:
           haxe-version: latest  # Install 'haxe_latest.tar.gz' from https://build.haxe.org/builds/haxe/linux64/
       - run: haxe -version
@@ -43,8 +42,8 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: krdlab/setup-haxe@v2
+      - uses: actions/checkout@v5
+      - uses: ShadowEngineTeam/setup-haxe@main
         with:
           haxe-version: 4.3.7
           cache-dependency-path: 'lib.hxml'
