@@ -96,7 +96,7 @@ class Asset {
         return tool_cache.cacheDir(await this.download(), this.name, this.version);
     }
     makeDownloadUrl(path) {
-        return `https://github.com/HaxeFoundation${path}`;
+        return `https://github.com/ShadowEngineTeam${path}`;
     }
     get fileExt() {
         switch (this.env.platform) {
