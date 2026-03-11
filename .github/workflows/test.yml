@@ -1,0 +1,72 @@
+# https://docs.github.com/en/free-pro-team@latest/actions/reference/workflow-syntax-for-github-actions
+name: CI
+
+on:
+  push:
+    branches:    # build all branches
+    - '**'
+    tags-ignore: # but don't build tags
+    - '**'
+    paths-ignore:
+    - '**/*.md'
+    - '.github/*.yml'
+  pull_request:
+  workflow_dispatch:
+    # https://github.blog/changelog/2020-07-06-github-actions-manual-triggers-with-workflow_dispatch/
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+        - macos-latest
+        - ubuntu-latest
+        - windows-latest
+        haxe:
+        - latest
+        - 4.3.7
+        - 3.4.7
+        include:
+        - lib_hxml: lib.hxml
+        - haxe: 3.4.7
+          lib_hxml: lib_haxe3.hxml
+
+    steps:
+
+    - name: Git Checkout
+      uses: actions/checkout@v6 #https://github.com/actions/checkout
+
+    - run: |
+        npm ci
+        npm run test
+
+    - name: Install Haxe ${{ matrix.haxe }}
+      uses: ./
+      with:
+        haxe-version: ${{ matrix.haxe }}
+
+    # install twice to verify re-installation works
+    - name: Install Haxe ${{ matrix.haxe }}
+      uses: ./
+      with:
+        haxe-version: ${{ matrix.haxe }}
+        cache-dependency-path: 'test-workflow/${{ matrix.lib_hxml }}'
+
+    - run: haxe -version
+
+    - run: haxelib install test-workflow/${{ matrix.lib_hxml }} --always
+
+    - name: Compile test code
+      run: |
+        haxe \
+          -cp test-workflow \
+          -lib hxnodejs \
+          -main Main \
+          -js test-workflow.js
