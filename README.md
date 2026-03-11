@@ -1,6 +1,6 @@
 # setup-haxe
 
-[![License](https://img.shields.io/github/license/krdlab/setup-haxe.svg?label=license)](#license)
+[![License](https://img.shields.io/github/license/ShadowEngineTeam/setup-haxe.svg?label=license)](#license)
 
 This action sets up a Haxe environment for use in your workflows.
 
