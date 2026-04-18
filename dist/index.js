@@ -182,9 +182,9 @@ class Asset {
         return found ? toolRoot : null;
     }
 }
-// * NOTE https://github.com/ShadowEngineTeam/neko/releases/download/v2-4-1/neko-2.4.0-linux64.tar.gz
-// * NOTE https://github.com/ShadowEngineTeam/neko/releases/download/v2-4-1/neko-2.4.0-osx-universal.tar.gz
-// * NOTE https://github.com/ShadowEngineTeam/neko/releases/download/v2-4-1/neko-2.4.0-win64.zip
+// * NOTE https://github.com/ShadowEngineTeam/neko/releases/download/v2-4-1/neko-2.4.1-linux64.tar.gz
+// * NOTE https://github.com/ShadowEngineTeam/neko/releases/download/v2-4-1/neko-2.4.1-osx-universal.tar.gz
+// * NOTE https://github.com/ShadowEngineTeam/neko/releases/download/v2-4-1/neko-2.4.1-win64.zip
 class NekoAsset extends Asset {
     force32;
     static resolveFromHaxeVersion(version) {
