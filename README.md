@@ -36,7 +36,8 @@ jobs:
       - run: haxe -version
 ```
 
-Caching global packages data:
+## Caching global packages data
+
 ```yaml
 jobs:
   build:
