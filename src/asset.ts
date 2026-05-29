@@ -95,10 +95,7 @@ function resolveHaxe(input: {
 
     case 'linux': {
       if (arch === 'arm64') {
-        return {
-          kind: 'unsupported',
-          reason: "Stable Haxe does not publish Linux ARM64 archives upstream; use 'haxe-version: latest'.",
-        };
+        return { kind: 'stable', cachePlatform: 'linuxarm64', archiveTarget: 'linuxarm64' };
       }
 
       return { kind: 'stable', cachePlatform: 'linux64', archiveTarget: 'linux64' };
@@ -313,9 +310,9 @@ abstract class Asset {
   }
 }
 
-// * NOTE https://github.com/ShadowEngineTeam/neko/releases/download/v2-4-0/neko-2.4.0-linux64.tar.gz
-// * NOTE https://github.com/ShadowEngineTeam/neko/releases/download/v2-4-0/neko-2.4.0-osx-universal.tar.gz
-// * NOTE https://github.com/ShadowEngineTeam/neko/releases/download/v2-4-0/neko-2.4.0-win64.zip
+// * NOTE https://github.com/ShadowEngineTeam/neko/releases/download/v2-4-1/neko-2.4.1-linux64.tar.gz
+// * NOTE https://github.com/ShadowEngineTeam/neko/releases/download/v2-4-1/neko-2.4.1-osx-universal.tar.gz
+// * NOTE https://github.com/ShadowEngineTeam/neko/releases/download/v2-4-1/neko-2.4.1-win64.zip
 export class NekoAsset extends Asset {
   static resolveFromHaxeVersion(version: string, nightly: boolean) {
     if (nightly) {
@@ -323,7 +320,7 @@ export class NekoAsset extends Asset {
     }
 
     // Haxe older than 4.3 has issues with mbedtls 3 in neko 2.4
-    const nekoVer = version.startsWith('3.') || (version.startsWith('4.') && version < '4.3.') ? '2.3.0' : '2.4.0';
+    const nekoVer = version.startsWith('3.') || (version.startsWith('4.') && version < '4.3.') ? '2.3.0' : '2.4.1';
     // Haxe 3 on windows has 32 bit haxelib, which requires 32 bit neko
     const force32 = version.startsWith('3.') && os.platform() === 'win32';
 

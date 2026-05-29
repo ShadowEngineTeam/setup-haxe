@@ -96,13 +96,13 @@ describe('HaxeAsset (nightly)', () => {
 
 describe('NekoAsset (stable)', () => {
   it.each([
-    ['linux', 'x64', '2.4.0', false, 'neko-2.4.0-linux64.tar.gz', 'v2-4-0'],
+    ['linux', 'x64', '2.4.1', false, 'neko-2.4.1-linux64.tar.gz', 'v2-4-1'],
     ['linux', 'x64', '2.3.0', false, 'neko-2.3.0-linux64.tar.gz', 'v2-3-0'],
-    ['linux', 'arm64', '2.4.0', false, 'neko-2.4.0-linux-arm64.tar.gz', 'v2-4-0'],
-    ['darwin', 'x64', '2.4.0', false, 'neko-2.4.0-osx-universal.tar.gz', 'v2-4-0'],
-    ['darwin', 'arm64', '2.4.0', false, 'neko-2.4.0-osx-universal.tar.gz', 'v2-4-0'],
+    ['linux', 'arm64', '2.4.1', false, 'neko-2.4.1-linux-arm64.tar.gz', 'v2-4-1'],
+    ['darwin', 'x64', '2.4.1', false, 'neko-2.4.1-osx-universal.tar.gz', 'v2-4-1'],
+    ['darwin', 'arm64', '2.4.1', false, 'neko-2.4.1-osx-universal.tar.gz', 'v2-4-1'],
     ['darwin', 'x64', '2.3.0', false, 'neko-2.3.0-osx64.tar.gz', 'v2-3-0'],
-    ['win32', 'x64', '2.4.0', false, 'neko-2.4.0-win64.zip', 'v2-4-0'],
+    ['win32', 'x64', '2.4.1', false, 'neko-2.4.1-win64.zip', 'v2-4-1'],
     ['win32', 'x64', '2.3.0', true, 'neko-2.3.0-win.zip', 'v2-3-0'],
   ] as const)('%s/%s + Neko %s (force32=%s)', (platform, arch, version, force32, fileName, tag) => {
     setOs(platform, arch);
@@ -117,9 +117,9 @@ describe('NekoAsset (stable)', () => {
     expect(() => asset.downloadUrl).toThrow(/Neko 2\.3\.x has no Linux ARM64 binary/);
   });
 
-  it('Windows ARM64 + Neko 2.4.0 throws an explicit unsupported error', () => {
+  it('Windows ARM64 + Neko 2.4.1 throws an explicit unsupported error', () => {
     setOs('win32', 'arm64');
-    const asset = new TestableNeko('2.4.0', false, false);
+    const asset = new TestableNeko('2.4.1', false, false);
     expect(() => asset.downloadUrl).toThrow(/Windows ARM64 is not supported/);
   });
 });
@@ -156,9 +156,9 @@ describe('NekoAsset.resolveFromHaxeVersion', () => {
     ['3.4.7', false, '2.3.0', false],
     ['4.0.5', false, '2.3.0', false],
     ['4.2.5', false, '2.3.0', false],
-    ['4.3.0', false, '2.4.0', false],
-    ['4.3.7', false, '2.4.0', false],
-    ['5.0.0-preview.1', false, '2.4.0', false],
+    ['4.3.0', false, '2.4.1', false],
+    ['4.3.7', false, '2.4.1', false],
+    ['5.0.0-preview.1', false, '2.4.1', false],
     ['latest', true, 'latest', false],
     ['2026-03-19_master_5f449dc', true, 'latest', false],
   ] as const)('Haxe %s (nightly=%s) -> Neko %s, force32=%s', (haxeVer, nightly, expectedNeko, expectedForce32) => {
@@ -191,11 +191,11 @@ describe('NekoAsset.resolveFromHaxeVersion', () => {
     expect(() => (neko as unknown as { downloadUrl: string }).downloadUrl).toThrow(/Neko 2\.3\.x has no Linux ARM64/);
   });
 
-  it('Linux ARM64 + Haxe 4.3.0 (Neko 2.4.0) -> linux-arm64 archive', () => {
+  it('Linux ARM64 + Haxe 4.3.0 (Neko 2.4.1) -> linux-arm64 archive', () => {
     setOs('linux', 'arm64');
     const neko = NekoAsset.resolveFromHaxeVersion('4.3.0', false);
-    expect(neko.version).toBe('2.4.0');
-    expect((neko as unknown as { fileNameWithoutExt: string }).fileNameWithoutExt).toBe('neko-2.4.0-linux-arm64');
+    expect(neko.version).toBe('2.4.1');
+    expect((neko as unknown as { fileNameWithoutExt: string }).fileNameWithoutExt).toBe('neko-2.4.1-linux-arm64');
   });
 });
 
@@ -209,9 +209,9 @@ describe('resolveTarget cachePlatform (haxelib cache key compatibility)', () => 
     ['haxe', 'latest', 'linux', 'x64', true, 'linux64'],
     ['haxe', 'latest', 'darwin', 'arm64', true, 'osx'],
     ['haxe', 'latest', 'linux', 'arm64', true, 'linux-arm64'],
-    ['neko', '2.4.0', 'linux', 'x64', false, 'linux64'],
-    ['neko', '2.4.0', 'darwin', 'arm64', false, 'osx'],
-    ['neko', '2.4.0', 'linux', 'arm64', false, 'linux-arm64'],
+    ['neko', '2.4.1', 'linux', 'x64', false, 'linux64'],
+    ['neko', '2.4.1', 'darwin', 'arm64', false, 'osx'],
+    ['neko', '2.4.1', 'linux', 'arm64', false, 'linux-arm64'],
   ] as const)('%s %s on %s/%s (nightly=%s) -> cachePlatform=%s', (tool, version, platform, arch, nightly, expectedCachePlatform) => {
     const result = resolveTarget({
       tool,
