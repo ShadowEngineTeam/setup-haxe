@@ -245,8 +245,6 @@ var lib_core = __nccwpck_require__(2186);
 var lib_exec = __nccwpck_require__(1514);
 // EXTERNAL MODULE: external "node:crypto"
 var external_node_crypto_ = __nccwpck_require__(6005);
-;// CONCATENATED MODULE: external "node:fs"
-const external_node_fs_namespaceObject = require("node:fs");
 ;// CONCATENATED MODULE: external "node:process"
 const external_node_process_namespaceObject = require("node:process");
 // EXTERNAL MODULE: external "os"
@@ -4008,7 +4006,6 @@ function _unique(values) {
 
 
 
-
 function resolveTarget(input) {
     const { tool, platform, arch } = input;
     if (platform === 'win32' && arch === 'arm64') {
@@ -4056,7 +4053,10 @@ function resolveHaxe(input) {
         }
         case 'linux': {
             if (arch === 'arm64') {
-                return { kind: 'stable', cachePlatform: 'linuxarm64', archiveTarget: 'linuxarm64' };
+                return {
+                    kind: 'unsupported',
+                    reason: "Stable Haxe does not publish Linux ARM64 archives upstream; use 'haxe-version: latest'.",
+                };
             }
             return { kind: 'stable', cachePlatform: 'linux64', archiveTarget: 'linux64' };
         }
@@ -4126,7 +4126,7 @@ class Asset {
         return cacheDir(await this.download(), this.name, this.version);
     }
     makeDownloadUrl(path) {
-        return `https://github.com/ShadowEngineTeam${path}`;
+        return `https://github.com/HaxeFoundation${path}`;
     }
     get fileExt() {
         return external_node_os_namespaceObject.platform() === 'win32' ? '.zip' : '.tar.gz';
@@ -4152,7 +4152,7 @@ class Asset {
     }
     async download() {
         const downloadPath = await this.downloadWithCurl(this.downloadUrl);
-        const extractPath = await this.extract(downloadPath, this.fileNameWithoutExt, this.fileExt);
+        const extractPath = await this.extract(downloadPath, this.fileExt);
         const toolRoot = await this.findToolRoot(extractPath, this.isDirectoryNested);
         if (!toolRoot) {
             throw new Error(`tool directory not found: ${extractPath}`);
@@ -4160,8 +4160,8 @@ class Asset {
         lib_core.debug(`found toolRoot: ${toolRoot}`);
         return toolRoot;
     }
-    // Use curl because the toolkit's http-client does not support relative redirects.
-    // see: https://github.com/actions/toolkit/blob/d47594b53638f7035a96b5ec1ed1e6caae66ee8d/packages/http-client/src/index.ts#L399-L405
+    // NOTE: the toolkit's http-client does not support relative redirects, so use curl.
+    // https://github.com/actions/toolkit/blob/d47594b53638f7035a96b5ec1ed1e6caae66ee8d/packages/http-client/src/index.ts#L399-L405
     async downloadWithCurl(url) {
         const validUrl = new URL(url);
         const dest = external_node_path_namespaceObject.join(this.getTempDir(), external_node_crypto_.randomUUID());
@@ -4182,15 +4182,16 @@ class Asset {
         return dest;
     }
     getTempDir() {
-        // See: https://docs.github.com/en/actions/reference/workflows-and-actions/variables
+        // NOTE: prefer RUNNER_TEMP so artifacts are placed in the runner's per-job temporary directory.
+        // https://docs.github.com/en/actions/reference/workflows-and-actions/variables
         const temporary = external_node_process_namespaceObject.env.RUNNER_TEMP ?? external_node_os_namespaceObject.tmpdir();
         lib_core.debug(`temporary directory: ${temporary}`);
         return temporary;
     }
-    async extract(file, dest, ext) {
-        if (external_node_fs_namespaceObject.existsSync(dest)) {
-            external_node_fs_namespaceObject.rmdirSync(dest, { recursive: true });
-        }
+    // NOTE: avoid cwd-relative extraction, which unpacks into GITHUB_WORKSPACE and leaves files in the user's checkout (#40).
+    async extract(file, ext) {
+        const dest = external_node_path_namespaceObject.join(this.getTempDir(), external_node_crypto_.randomUUID());
+        lib_core.debug(`extracting ${file} to ${dest}`);
         switch (ext) {
             case '.tar.gz': {
                 return extractTar(file, dest);
@@ -4203,7 +4204,8 @@ class Asset {
             }
         }
     }
-    // * NOTE: tar xz -C haxe-4.0.5-linux64 -f haxe-4.0.5-linux64.tar.gz --> haxe-4.0.5-linux64/haxe_20191217082701_67feacebc
+    // NOTE: upstream archives contain the tool under a single top-level directory.
+    // e.g. haxe-4.0.5-linux64.tar.gz -> haxe-4.0.5-linux64/haxe_20191217082701_67feacebc
     async findToolRoot(extractPath, nested) {
         if (!nested) {
             return extractPath;
@@ -4224,9 +4226,6 @@ class Asset {
         return found ? toolRoot : null;
     }
 }
-// * NOTE https://github.com/ShadowEngineTeam/neko/releases/download/v2-4-1/neko-2.4.1-linux64.tar.gz
-// * NOTE https://github.com/ShadowEngineTeam/neko/releases/download/v2-4-1/neko-2.4.1-osx-universal.tar.gz
-// * NOTE https://github.com/ShadowEngineTeam/neko/releases/download/v2-4-1/neko-2.4.1-win64.zip
 class NekoAsset extends Asset {
     nightly;
     force32;
@@ -4234,9 +4233,9 @@ class NekoAsset extends Asset {
         if (nightly) {
             return new NekoAsset('latest', true, false);
         }
-        // Haxe older than 4.3 has issues with mbedtls 3 in neko 2.4
-        const nekoVer = version.startsWith('3.') || (version.startsWith('4.') && version < '4.3.') ? '2.3.0' : '2.4.1';
-        // Haxe 3 on windows has 32 bit haxelib, which requires 32 bit neko
+        // NOTE: Haxe older than 4.3 has known issues with mbedtls 3 in Neko 2.4.
+        const nekoVer = version.startsWith('3.') || (version.startsWith('4.') && version < '4.3.') ? '2.3.0' : '2.4.0';
+        // NOTE: Haxe 3 on Windows has 32-bit haxelib, which requires 32-bit Neko.
         const force32 = version.startsWith('3.') && external_node_os_namespaceObject.platform() === 'win32';
         return new NekoAsset(nekoVer, false, force32);
     }
@@ -4248,6 +4247,9 @@ class NekoAsset extends Asset {
     get cachePlatform() {
         return this.requireSupported(this.resolve('neko', this.force32)).cachePlatform;
     }
+    // NOTE: example URLs built below (tag uses '-' as separator, e.g. 2.4.0 -> v2-4-0).
+    //   stable:  https://github.com/HaxeFoundation/neko/releases/download/v2-4-0/neko-2.4.0-linux64.tar.gz
+    //   nightly: https://build.haxe.org/builds/neko/mac-universal/neko_latest.tar.gz
     get downloadUrl() {
         const resolution = this.requireSupported(this.resolve('neko', this.force32));
         if (resolution.kind === 'nightly') {
@@ -4270,9 +4272,6 @@ class NekoAsset extends Asset {
         return this.nightly;
     }
 }
-// * NOTE https://github.com/ShadowEngineTeam/haxe/releases/download/4.0.5/haxe-4.0.5-linux64.tar.gz
-// * NOTE https://github.com/ShadowEngineTeam/haxe/releases/download/3.4.7/haxe-3.4.7-win64.zip
-// * NOTE https://build.haxe.org/builds/haxe/mac/haxe_latest.tar.gz
 class HaxeAsset extends Asset {
     nightly;
     constructor(version, nightly) {
@@ -4282,6 +4281,9 @@ class HaxeAsset extends Asset {
     get cachePlatform() {
         return this.requireSupported(this.resolve('haxe')).cachePlatform;
     }
+    // NOTE: example URLs built below.
+    //   stable:  https://github.com/HaxeFoundation/haxe/releases/download/4.0.5/haxe-4.0.5-linux64.tar.gz
+    //   nightly: https://build.haxe.org/builds/haxe/mac/haxe_latest.tar.gz
     get downloadUrl() {
         const resolution = this.requireSupported(this.resolve('haxe'));
         if (resolution.kind === 'nightly') {
@@ -4304,6 +4306,8 @@ class HaxeAsset extends Asset {
     }
 }
 
+;// CONCATENATED MODULE: external "node:fs"
+const external_node_fs_namespaceObject = require("node:fs");
 ;// CONCATENATED MODULE: ./node_modules/@actions/cache/node_modules/@actions/core/lib/utils.js
 // We use any as a valid input type
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -53738,10 +53742,9 @@ async function saveHaxelib() {
 
 async function setup(version, nightly, cacheDependencyPath) {
     const haxe = new HaxeAsset(version, nightly);
-    // Preflight: fail fast on unsupported combinations (e.g. stable Haxe + Linux ARM64)
-    // before downloading Neko. cachePlatform throws when the resolver returns 'unsupported'.
+    // NOTE: fail fast on unsupported combinations (e.g. stable Haxe + Linux ARM64) before downloading Neko.
     const haxeCachePlatform = haxe.cachePlatform;
-    const neko = NekoAsset.resolveFromHaxeVersion(version, nightly); // Haxelib requires Neko
+    const neko = NekoAsset.resolveFromHaxeVersion(version, nightly); // NOTE: haxelib requires Neko.
     const nekoPath = await neko.setup();
     lib_core.addPath(nekoPath);
     lib_core.exportVariable('NEKOPATH', nekoPath);
@@ -53751,7 +53754,8 @@ async function setup(version, nightly, cacheDependencyPath) {
     lib_core.exportVariable('HAXE_STD_PATH', external_node_path_namespaceObject.join(haxePath, 'std'));
     if (external_node_os_namespaceObject.platform() === 'darwin') {
         lib_core.exportVariable('DYLD_FALLBACK_LIBRARY_PATH', `${nekoPath}:$DYLD_FALLBACK_LIBRARY_PATH`);
-        // Ref: https://github.com/asdf-community/asdf-haxe/pull/7
+        // NOTE: the macOS dynamic loader requires libneko in the same directory as the haxe binary.
+        // https://github.com/asdf-community/asdf-haxe/pull/7
         await (0,lib_exec.exec)('ln', ['-sfv', external_node_path_namespaceObject.join(nekoPath, 'libneko.2.dylib'), external_node_path_namespaceObject.join(haxePath, 'libneko.2.dylib')]);
     }
     const haxelibPath = external_node_path_namespaceObject.join(haxePath, 'lib');
