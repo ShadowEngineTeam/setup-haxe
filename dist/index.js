@@ -4230,11 +4230,8 @@ class NekoAsset extends Asset {
         if (nightly) {
             return new NekoAsset('latest', true, false);
         }
-        // NOTE: Haxe older than 4.3 has known issues with mbedtls 3 in Neko 2.4.
-        const nekoVer = version.startsWith('3.') || (version.startsWith('4.') && version < '4.3.') ? '2.3.0' : '2.4.0';
-        // NOTE: Haxe 3 on Windows has 32-bit haxelib, which requires 32-bit Neko.
-        const force32 = version.startsWith('3.') && external_node_os_namespaceObject.platform() === 'win32';
-        return new NekoAsset(nekoVer, false, force32);
+        const nekoVer = '2.4.1';
+        return new NekoAsset(nekoVer, false, false);
     }
     constructor(version, nightly, force32) {
         super('neko', version);
