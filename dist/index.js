@@ -4053,10 +4053,7 @@ function resolveHaxe(input) {
         }
         case 'linux': {
             if (arch === 'arm64') {
-                return {
-                    kind: 'unsupported',
-                    reason: "Stable Haxe does not publish Linux ARM64 archives upstream; use 'haxe-version: latest'.",
-                };
+                return { kind: 'stable', cachePlatform: 'linuxarm64', archiveTarget: 'linuxarm64' };
             }
             return { kind: 'stable', cachePlatform: 'linux64', archiveTarget: 'linux64' };
         }
@@ -4126,7 +4123,7 @@ class Asset {
         return cacheDir(await this.download(), this.name, this.version);
     }
     makeDownloadUrl(path) {
-        return `https://github.com/HaxeFoundation${path}`;
+        return `https://github.com/ShadowEngineTeam${path}`;
     }
     get fileExt() {
         return external_node_os_namespaceObject.platform() === 'win32' ? '.zip' : '.tar.gz';
@@ -4247,8 +4244,8 @@ class NekoAsset extends Asset {
     get cachePlatform() {
         return this.requireSupported(this.resolve('neko', this.force32)).cachePlatform;
     }
-    // NOTE: example URLs built below (tag uses '-' as separator, e.g. 2.4.0 -> v2-4-0).
-    //   stable:  https://github.com/HaxeFoundation/neko/releases/download/v2-4-0/neko-2.4.0-linux64.tar.gz
+    // NOTE: example URLs built below (tag uses '-' as separator, e.g. 2.4.1 -> v2-4-1).
+    //   stable:  https://github.com/ShadowEngineTeam/neko/releases/download/v2-4-1/neko-2.4.1-linux64.tar.gz
     //   nightly: https://build.haxe.org/builds/neko/mac-universal/neko_latest.tar.gz
     get downloadUrl() {
         const resolution = this.requireSupported(this.resolve('neko', this.force32));
