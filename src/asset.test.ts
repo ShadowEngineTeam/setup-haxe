@@ -79,39 +79,27 @@ describe('HaxeAsset (stable)', () => {
     ['win32', 'x64', '3.4.7', 'haxe-3.4.7-win64.zip', 'haxe-3.4.7-win64'],
     ['win32', 'x64', '3.4.3', 'haxe-3.4.3-win.zip', 'haxe-3.4.3-win'],
     ['linux', 'arm64', '4.3.7', 'haxe-4.3.7-linuxarm64.tar.gz', 'haxe-4.3.7-linuxarm64'],
-    ['linux', 'arm', '4.3.7', 'haxe-4.3.7-linuxarm.tar.gz', 'haxe-4.3.7-linuxarm'],
-    ['win32', 'arm64', '4.3.7', 'haxe-4.3.7-winarm64.zip', 'haxe-4.3.7-winarm64'],
-    ['win32', 'arm64', '3.4.7', 'haxe-3.4.7-winarm64.zip', 'haxe-3.4.7-winarm64'],
+    ['win32', 'arm64', '4.3.7', 'haxe-4.3.7-win64.zip', 'haxe-4.3.7-win64'],
+    ['win32', 'arm64', '3.4.7', 'haxe-3.4.7-win64.zip', 'haxe-3.4.7-win64'],
+    ['win32', 'arm64', '3.4.3', 'haxe-3.4.3-win.zip', 'haxe-3.4.3-win'],
     ['win32', 'arm64', '3.4.3', 'haxe-3.4.3-win.zip', 'haxe-3.4.3-win'],
   ] as const)('%s/%s + %s', (platform, arch, version, fileName, basename) => {
     setOs(platform, arch);
-    const asset = new TestableHaxe(version, false);
+    const asset = new TestableHaxe(version);
     expect(asset.downloadUrl).toBe(`https://github.com/ShadowEngineTeam/haxe/releases/download/${version}/${fileName}`);
     expect(asset.fileNameWithoutExt).toBe(basename);
   });
 
-  it('Windows ARM64 + 4.3.7 does not force an emulated arch', () => {
-    setOs('win32', 'arm64');
-    const asset = new TestableHaxe('4.3.7', false);
-    expect(asset.forceArch).toBe(undefined);
+  it('Linux ARM (32-bit) + 4.3.7 throws an explicit unsupported error', () => {
+    setOs('linux', 'arm');
+    const asset = new TestableHaxe('4.3.7');
+    expect(() => asset.downloadUrl).toThrow(/no Linux ARM/);
   });
-});
 
-describe('HaxeAsset (nightly)', () => {
-  it.each([
-    ['linux', 'x64', 'linux64'],
-    ['linux', 'arm64', 'linux-arm64'],
-    ['linux', 'arm', 'linux-arm'],
-    ['darwin', 'x64', 'mac'],
-    ['darwin', 'arm64', 'mac'],
-    ['win32', 'x64', 'windows64'],
-    ['win32', 'arm64', 'windows-arm64'],
-  ] as const)('%s/%s -> build.haxe.org/builds/haxe/%s', (platform, arch, segment) => {
-    setOs(platform, arch);
-    const asset = new TestableHaxe('latest', true);
-    const ext = platform === 'win32' ? 'zip' : 'tar.gz';
-    expect(asset.downloadUrl).toBe(`https://build.haxe.org/builds/haxe/${segment}/haxe_latest.${ext}`);
-    expect(asset.fileNameWithoutExt).toBe('haxe_latest');
+  it('Windows ARM64 + 4.3.7 uses x64 emulation', () => {
+    setOs('win32', 'arm64');
+    const asset = new TestableHaxe('4.3.7');
+    expect(asset.forceArch).toBe('x64');
   });
 });
 
@@ -120,101 +108,62 @@ describe('NekoAsset (stable)', () => {
     ['linux', 'x64', '2.4.1', undefined, 'neko-2.4.1-linux64.tar.gz', 'v2-4-1'],
     ['linux', 'x64', '2.3.0', undefined, 'neko-2.3.0-linux64.tar.gz', 'v2-3-0'],
     ['linux', 'arm64', '2.4.1', undefined, 'neko-2.4.1-linux-arm64.tar.gz', 'v2-4-1'],
-    ['linux', 'arm', '2.4.1', undefined, 'neko-2.4.1-linux-arm.tar.gz', 'v2-4-1'],
+    ['linux', 'arm', '2.4.1', undefined, 'neko-2.4.1-linux-armv7.tar.gz', 'v2-4-1'],
     ['darwin', 'x64', '2.4.1', undefined, 'neko-2.4.1-osx-universal.tar.gz', 'v2-4-1'],
     ['darwin', 'arm64', '2.4.1', undefined, 'neko-2.4.1-osx-universal.tar.gz', 'v2-4-1'],
     ['darwin', 'x64', '2.3.0', undefined, 'neko-2.3.0-osx64.tar.gz', 'v2-3-0'],
     ['win32', 'x64', '2.4.1', undefined, 'neko-2.4.1-win64.zip', 'v2-4-1'],
     ['win32', 'x64', '2.3.0', 'ia32', 'neko-2.3.0-win.zip', 'v2-3-0'],
-    ['win32', 'arm64', '2.4.1', undefined, 'neko-2.4.1-winarm64.zip', 'v2-4-1'],
+    ['win32', 'arm64', '2.4.1', 'x64', 'neko-2.4.1-win64.zip', 'v2-4-1'],
+    ['win32', 'arm64', '2.3.0', 'ia32', 'neko-2.3.0-win.zip', 'v2-3-0'],
     ['win32', 'arm64', '2.3.0', 'ia32', 'neko-2.3.0-win.zip', 'v2-3-0'],
   ] as const)('%s/%s + Neko %s (forceArch=%s)', (platform, arch, version, forceArch, fileName, tag) => {
     setOs(platform, arch);
-    const asset = new TestableNeko(version, false, forceArch);
+    const asset = new TestableNeko(version, forceArch);
     expect(asset.downloadUrl).toBe(`https://github.com/ShadowEngineTeam/neko/releases/download/${tag}/${fileName}`);
     expect(asset.fileNameWithoutExt).toBe(fileName.replace(/\.(?:tar\.gz|zip)$/, ''));
   });
 
   it('Linux ARM64 + Neko 2.3.0 throws an explicit unsupported error', () => {
     setOs('linux', 'arm64');
-    const asset = new TestableNeko('2.3.0', false);
+    const asset = new TestableNeko('2.3.0');
     expect(() => asset.downloadUrl).toThrow(/Neko 2\.3\.x has no Linux ARM binary/);
-  });
-});
-
-describe('NekoAsset (nightly)', () => {
-  it.each([
-    ['linux', 'x64', 'linux64'],
-    ['linux', 'arm64', 'linux-arm64'],
-    ['linux', 'arm', 'linux-arm'],
-    ['darwin', 'x64', 'mac-universal'],
-    ['darwin', 'arm64', 'mac-universal'],
-    ['win32', 'x64', 'windows64'],
-    ['win32', 'arm64', 'windows-arm64'],
-  ] as const)('%s/%s -> build.haxe.org/builds/neko/%s', (platform, arch, segment) => {
-    setOs(platform, arch);
-    const asset = new TestableNeko('latest', true);
-    const ext = platform === 'win32' ? 'zip' : 'tar.gz';
-    expect(asset.downloadUrl).toBe(`https://build.haxe.org/builds/neko/${segment}/neko_latest.${ext}`);
-  });
-
-  it.each([
-    ['linux', 'x64'],
-    ['linux', 'arm64'],
-    ['linux', 'arm'],
-    ['darwin', 'x64'],
-    ['darwin', 'arm64'],
-    ['win32', 'x64'],
-    ['win32', 'arm64'],
-  ] as const)('%s/%s nightly fileNameWithoutExt = neko_latest (symmetric with HaxeAsset)', (platform, arch) => {
-    setOs(platform, arch);
-    const asset = new TestableNeko('latest', true);
-    expect(asset.fileNameWithoutExt).toBe('neko_latest');
   });
 });
 
 describe('NekoAsset.resolveFromHaxeVersion', () => {
   it.each([
-    ['3.4.7', false, '2.3.0'],
-    ['4.0.5', false, '2.3.0'],
-    ['4.2.5', false, '2.3.0'],
-    ['4.3.0', false, '2.4.1'],
-    ['4.3.7', false, '2.4.1'],
-    ['5.0.0-preview.1', false, '2.4.1'],
-    ['latest', true, 'latest'],
-    ['2026-03-19_master_5f449dc', true, 'latest'],
-  ] as const)('Haxe %s (nightly=%s) -> Neko %s', (haxeVer, nightly, expectedNeko) => {
-    const neko = NekoAsset.resolveFromHaxeVersion(haxeVer, nightly);
+    ['3.4.7', '2.3.0'],
+    ['4.0.5', '2.3.0'],
+    ['4.2.5', '2.3.0'],
+    ['4.3.0', '2.4.1'],
+    ['4.3.7', '2.4.1'],
+    ['5.0.0-preview.1', '2.4.1'],
+  ] as const)('Haxe %s -> Neko %s', (haxeVer, expectedNeko) => {
+    const neko = NekoAsset.resolveFromHaxeVersion(haxeVer);
     expect(neko.version).toBe(expectedNeko);
     expect(neko.forceArch).toBe(undefined);
   });
 
   it('Haxe 3.4.7 on Windows x64 -> forceArch=ia32', () => {
     setOs('win32', 'x64');
-    const neko = NekoAsset.resolveFromHaxeVersion('3.4.7', false);
+    const neko = NekoAsset.resolveFromHaxeVersion('3.4.7');
     expect(neko.version).toBe('2.3.0');
     expect(neko.forceArch).toBe('ia32');
-  });
-
-  it('Haxe latest on Windows x64 -> nightly branch sets no forceArch', () => {
-    setOs('win32', 'x64');
-    const neko = NekoAsset.resolveFromHaxeVersion('latest', true);
-    expect(neko.version).toBe('latest');
-    expect(neko.forceArch).toBe(undefined);
   });
 
   it('Haxe 3.4.7 on Windows arm64 -> forceArch=ia32', () => {
     setOs('win32', 'arm64');
-    const neko = NekoAsset.resolveFromHaxeVersion('3.4.7', false);
+    const neko = NekoAsset.resolveFromHaxeVersion('3.4.7');
     expect(neko.version).toBe('2.3.0');
     expect(neko.forceArch).toBe('ia32');
   });
 
-  it('Haxe latest on Windows arm64 -> no forceArch (native)', () => {
+  it('Haxe 4.3.7 on Windows arm64 -> forceArch=x64 (emulation)', () => {
     setOs('win32', 'arm64');
-    const neko = NekoAsset.resolveFromHaxeVersion('latest', true);
-    expect(neko.version).toBe('latest');
-    expect(neko.forceArch).toBe(undefined);
+    const neko = NekoAsset.resolveFromHaxeVersion('4.3.7');
+    expect(neko.version).toBe('2.4.1');
+    expect(neko.forceArch).toBe('x64');
   });
 
   it.each([
@@ -222,14 +171,14 @@ describe('NekoAsset.resolveFromHaxeVersion', () => {
     ['4.2.5'],
   ] as const)('Linux ARM64 + Haxe %s (Neko 2.3.0) -> downloadUrl throws unsupported', (haxeVer) => {
     setOs('linux', 'arm64');
-    const neko = NekoAsset.resolveFromHaxeVersion(haxeVer, false);
+    const neko = NekoAsset.resolveFromHaxeVersion(haxeVer);
     expect(neko.version).toBe('2.3.0');
     expect(() => (neko as unknown as { downloadUrl: string }).downloadUrl).toThrow(/Neko 2\.3\.x has no Linux ARM/);
   });
 
   it('Linux ARM64 + Haxe 4.3.0 (Neko 2.4.1) -> linux-arm64 archive', () => {
     setOs('linux', 'arm64');
-    const neko = NekoAsset.resolveFromHaxeVersion('4.3.0', false);
+    const neko = NekoAsset.resolveFromHaxeVersion('4.3.0');
     expect(neko.version).toBe('2.4.1');
     expect((neko as unknown as { fileNameWithoutExt: string }).fileNameWithoutExt).toBe('neko-2.4.1-linux-arm64');
   });
@@ -237,31 +186,23 @@ describe('NekoAsset.resolveFromHaxeVersion', () => {
 
 describe('resolveTarget cachePlatform (haxelib cache key compatibility)', () => {
   it.each([
-    ['haxe', '4.3.7', 'linux', 'x64', false, 'linux64'],
-    ['haxe', '4.3.7', 'darwin', 'x64', false, 'osx'],
-    ['haxe', '4.3.7', 'darwin', 'arm64', false, 'osx'],
-    ['haxe', '4.3.7', 'win32', 'x64', false, 'win64'],
-    ['haxe', '3.4.7', 'win32', 'x64', false, 'win64'],
-    ['haxe', '3.4.3', 'win32', 'ia32', false, 'win'],
-    ['haxe', 'latest', 'linux', 'x64', true, 'linux64'],
-    ['haxe', 'latest', 'darwin', 'arm64', true, 'osx'],
-    ['haxe', 'latest', 'linux', 'arm64', true, 'linux-arm64'],
-    ['haxe', 'latest', 'linux', 'arm', true, 'linux-arm'],
-    ['haxe', '4.3.7', 'linux', 'arm64', false, 'linuxarm64'],
-    ['haxe', '4.3.7', 'linux', 'arm', false, 'linuxarm'],
-    ['haxe', '4.3.7', 'win32', 'arm64', false, 'winarm64'],
-    ['neko', '2.4.1', 'linux', 'arm', false, 'linux-arm'],
-    ['neko', '2.4.1', 'win32', 'arm64', false, 'winarm64'],
-    ['neko', '2.4.1', 'linux', 'x64', false, 'linux64'],
-    ['neko', '2.4.1', 'darwin', 'arm64', false, 'osx'],
-    ['neko', '2.4.1', 'linux', 'arm64', false, 'linux-arm64'],
-  ] as const)('%s %s on %s/%s (nightly=%s) -> cachePlatform=%s', (tool, version, platform, arch, nightly, expectedCachePlatform) => {
+    ['haxe', '4.3.7', 'linux', 'x64', 'linux64'],
+    ['haxe', '4.3.7', 'darwin', 'x64', 'osx'],
+    ['haxe', '4.3.7', 'darwin', 'arm64', 'osx'],
+    ['haxe', '4.3.7', 'win32', 'x64', 'win64'],
+    ['haxe', '3.4.7', 'win32', 'x64', 'win64'],
+    ['haxe', '3.4.3', 'win32', 'ia32', 'win'],
+    ['haxe', '4.3.7', 'linux', 'arm64', 'linuxarm64'],
+    ['neko', '2.4.1', 'linux', 'arm', 'linux-armv7'],
+    ['neko', '2.4.1', 'linux', 'x64', 'linux64'],
+    ['neko', '2.4.1', 'darwin', 'arm64', 'osx'],
+    ['neko', '2.4.1', 'linux', 'arm64', 'linux-arm64'],
+  ] as const)('%s %s on %s/%s -> cachePlatform=%s', (tool, version, platform, arch, expectedCachePlatform) => {
     const result = resolveTarget({
       tool,
       version,
       platform: platform as NodeJS.Platform,
       arch,
-      nightly,
     });
     expect(result.kind).not.toBe('unsupported');
     if (result.kind !== 'unsupported') {
@@ -275,7 +216,6 @@ describe('resolveTarget cachePlatform (haxelib cache key compatibility)', () => 
       version: '2.3.0',
       platform: 'win32',
       arch: 'ia32',
-      nightly: false,
     });
     expect(result.kind).toBe('stable');
     if (result.kind === 'stable') {
@@ -305,7 +245,7 @@ describe('Asset.extract destination (issue #40)', () => {
   });
 
   it('.tar.gz is extracted under RUNNER_TEMP, not a cwd-relative path', async () => {
-    const asset = new HaxeAsset('4.3.7', false);
+    const asset = new HaxeAsset('4.3.7');
     const file = '/tmp/download/haxe.tar.gz';
     await (asset as unknown as { extract: ExtractFn }).extract(file, '.tar.gz');
 
@@ -318,7 +258,7 @@ describe('Asset.extract destination (issue #40)', () => {
   });
 
   it('.zip is extracted under RUNNER_TEMP, not a cwd-relative path', async () => {
-    const asset = new HaxeAsset('4.3.7', false);
+    const asset = new HaxeAsset('4.3.7');
     const file = '/tmp/download/haxe.zip';
     await (asset as unknown as { extract: ExtractFn }).extract(file, '.zip');
 
@@ -354,7 +294,7 @@ describe('Asset.download', () => {
   });
 
   it('hands curl a RUNNER_TEMP path instead of a cwd-relative one', async () => {
-    const asset = new HaxeAsset('4.3.7', false);
+    const asset = new HaxeAsset('4.3.7');
     await (asset as unknown as { download: () => Promise<string> }).download();
 
     expect(downloadWithCurl).toHaveBeenCalledTimes(1);
@@ -367,7 +307,7 @@ describe('Asset.download', () => {
   });
 
   it('extracts the file curl wrote', async () => {
-    const asset = new HaxeAsset('4.3.7', false);
+    const asset = new HaxeAsset('4.3.7');
     await (asset as unknown as { download: () => Promise<string> }).download();
 
     const [, destination] = vi.mocked(downloadWithCurl).mock.calls[0] as [string, string];
@@ -378,7 +318,7 @@ describe('Asset.download', () => {
   it('does not extract anything when curl fails', async () => {
     vi.mocked(downloadWithCurl).mockRejectedValueOnce(new Error('download failed'));
 
-    const asset = new HaxeAsset('4.3.7', false);
+    const asset = new HaxeAsset('4.3.7');
     await expect((asset as unknown as { download: () => Promise<string> }).download()).rejects.toThrow(
       'download failed',
     );

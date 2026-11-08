@@ -23,7 +23,7 @@ jobs:
           haxelib install hxnodejs
 ```
 
-For nigthly versions:
+To use the newest ShadowEngineTeam release:
 ```yaml
 jobs:
   build:
@@ -32,7 +32,7 @@ jobs:
       - uses: actions/checkout@v5
       - uses: ShadowEngineTeam/setup-haxe@main
         with:
-          haxe-version: latest  # Install 'haxe_latest.tar.gz' from https://build.haxe.org/builds/haxe/linux64/
+          haxe-version: latest  # Resolves to the latest release of https://github.com/ShadowEngineTeam/haxe
       - run: haxe -version
 ```
 

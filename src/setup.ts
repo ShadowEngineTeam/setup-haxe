@@ -10,12 +10,12 @@ import { exec } from '@actions/exec';
 import { HaxeAsset, NekoAsset } from './asset';
 import { createHaxelibKey, restoreHaxelib } from './haxelib';
 
-export async function setup(version: string, nightly: boolean, cacheDependencyPath: string) {
-  const haxe = new HaxeAsset(version, nightly);
+export async function setup(version: string, cacheDependencyPath: string) {
+  const haxe = new HaxeAsset(version);
   // NOTE: fail fast on unsupported combinations (e.g. stable Haxe + Linux ARM64) before downloading Neko.
   const haxeCachePlatform = haxe.cachePlatform;
 
-  const neko = NekoAsset.resolveFromHaxeVersion(version, nightly); // NOTE: haxelib requires Neko.
+  const neko = NekoAsset.resolveFromHaxeVersion(version); // NOTE: haxelib requires Neko.
   const nekoPath = await neko.setup();
   core.addPath(nekoPath);
   core.exportVariable('NEKOPATH', nekoPath);

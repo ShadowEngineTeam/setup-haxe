@@ -18,17 +18,15 @@ type Tool = 'haxe' | 'neko';
 
 type Resolution =
   | { kind: 'stable'; cachePlatform: string; archiveTarget: string }
-  | { kind: 'nightly'; cachePlatform: string; nightlyPathSegment: string }
   | { kind: 'unsupported'; reason: string };
 
-type SupportedResolution = Extract<Resolution, { kind: 'stable' | 'nightly' }>;
+type SupportedResolution = Extract<Resolution, { kind: 'stable' }>;
 
 interface ResolveInput {
   tool: Tool;
   version: string;
   platform: NodeJS.Platform;
   arch: string;
-  nightly: boolean;
 }
 
 export function resolveTarget(input: ResolveInput): Resolution {
@@ -43,44 +41,20 @@ export function resolveTarget(input: ResolveInput): Resolution {
   }
 
   return tool === 'haxe'
-    ? resolveHaxe({ platform, arch, nightly: input.nightly })
+    ? resolveHaxe({ platform, arch })
     : resolveNeko({
         version: input.version,
         platform,
         arch,
-        nightly: input.nightly,
       });
 }
 
 function resolveHaxe(input: {
   platform: 'darwin' | 'linux' | 'win32';
   arch: 'ia32' | 'x64' | 'arm' | 'arm64';
-  nightly: boolean;
 }): Resolution {
-  const { platform, arch, nightly } = input;
+  const { platform, arch } = input;
 
-  if (nightly) {
-    switch (platform) {
-      case 'darwin': {
-        return { kind: 'nightly', cachePlatform: 'osx', nightlyPathSegment: 'mac' };
-      }
-
-      case 'linux': {
-        if (arch === 'arm64' || arch === 'arm') {
-          const seg = arch === 'arm64' ? 'linux-arm64' : 'linux-arm';
-          return { kind: 'nightly', cachePlatform: seg, nightlyPathSegment: seg };
-        }
-
-        return { kind: 'nightly', cachePlatform: 'linux64', nightlyPathSegment: 'linux64' };
-      }
-
-      case 'win32': {
-        return arch === 'arm64'
-          ? { kind: 'nightly', cachePlatform: 'win-arm64', nightlyPathSegment: 'windows-arm64' }
-          : { kind: 'nightly', cachePlatform: 'win64', nightlyPathSegment: 'windows64' };
-      }
-    }
-  }
 
   switch (platform) {
     case 'darwin': {
@@ -93,7 +67,7 @@ function resolveHaxe(input: {
       }
 
       if (arch === 'arm') {
-        return { kind: 'stable', cachePlatform: 'linuxarm', archiveTarget: 'linuxarm' };
+        return { kind: 'unsupported', reason: 'ShadowEngineTeam/haxe publishes no Linux ARM (32-bit) archives.' };
       }
 
       return { kind: 'stable', cachePlatform: 'linux64', archiveTarget: 'linux64' };
@@ -102,10 +76,6 @@ function resolveHaxe(input: {
     case 'win32': {
       if (arch === 'ia32') {
         return { kind: 'stable', cachePlatform: 'win', archiveTarget: 'win' };
-      }
-
-      if (arch === 'arm64') {
-        return { kind: 'stable', cachePlatform: 'winarm64', archiveTarget: 'winarm64' };
       }
 
       return { kind: 'stable', cachePlatform: 'win64', archiveTarget: 'win64' };
@@ -117,32 +87,9 @@ function resolveNeko(input: {
   version: string;
   platform: 'darwin' | 'linux' | 'win32';
   arch: 'ia32' | 'x64' | 'arm' | 'arm64';
-  nightly: boolean;
 }): Resolution {
-  const { version, platform, arch, nightly } = input;
+  const { version, platform, arch } = input;
 
-  if (nightly) {
-    switch (platform) {
-      case 'darwin': {
-        return { kind: 'nightly', cachePlatform: 'osx', nightlyPathSegment: 'mac-universal' };
-      }
-
-      case 'linux': {
-        if (arch === 'arm64' || arch === 'arm') {
-          const seg = arch === 'arm64' ? 'linux-arm64' : 'linux-arm';
-          return { kind: 'nightly', cachePlatform: seg, nightlyPathSegment: seg };
-        }
-
-        return { kind: 'nightly', cachePlatform: 'linux64', nightlyPathSegment: 'linux64' };
-      }
-
-      case 'win32': {
-        return arch === 'arm64'
-          ? { kind: 'nightly', cachePlatform: 'win-arm64', nightlyPathSegment: 'windows-arm64' }
-          : { kind: 'nightly', cachePlatform: 'win64', nightlyPathSegment: 'windows64' };
-      }
-    }
-  }
 
   switch (platform) {
     case 'darwin': {
@@ -160,7 +107,7 @@ function resolveNeko(input: {
           };
         }
 
-        const target = arch === 'arm64' ? 'linux-arm64' : 'linux-arm';
+        const target = arch === 'arm64' ? 'linux-arm64' : 'linux-armv7';
         return { kind: 'stable', cachePlatform: target, archiveTarget: target };
       }
 
@@ -172,13 +119,15 @@ function resolveNeko(input: {
         return { kind: 'stable', cachePlatform: 'win', archiveTarget: 'win' };
       }
 
-      if (arch === 'arm64') {
-        return { kind: 'stable', cachePlatform: 'winarm64', archiveTarget: 'winarm64' };
-      }
-
       return { kind: 'stable', cachePlatform: 'win64', archiveTarget: 'win64' };
     }
   }
+}
+
+// NOTE: Haxe publishes no Windows ARM64 archive, so the x64 build runs under emulation.
+// Neko is forced to x64 as well, because it must match the architecture of the Haxe binary.
+function isWindowsArm(): boolean {
+  return os.platform() === 'win32' && os.arch() === 'arm64';
 }
 
 abstract class Asset {
@@ -217,12 +166,7 @@ abstract class Asset {
       version: this.version,
       platform: os.platform(),
       arch: this.forceArch ?? os.arch(),
-      nightly: this.isNightly,
     });
-  }
-
-  protected get isNightly(): boolean {
-    return false;
   }
 
   protected requireSupported(resolution: Resolution): SupportedResolution {
@@ -300,25 +244,18 @@ abstract class Asset {
 }
 
 export class NekoAsset extends Asset {
-  static resolveFromHaxeVersion(version: string, nightly: boolean) {
+  static resolveFromHaxeVersion(version: string) {
     // NOTE: Haxe 3 on Windows has 32-bit haxelib, which requires 32-bit Neko.
-    const forceArch = version.startsWith('3.') && os.platform() === 'win32' ? 'ia32' : undefined;
-
-    if (nightly) {
-      return new NekoAsset('latest', true, forceArch);
-    }
+    const forceArch =
+      version.startsWith('3.') && os.platform() === 'win32' ? 'ia32' : isWindowsArm() ? 'x64' : undefined;
 
     // NOTE: Haxe older than 4.3 has known issues with mbedtls 3 in Neko 2.4.
     const nekoVer = version.startsWith('3.') || (version.startsWith('4.') && version < '4.3.') ? '2.3.0' : '2.4.1';
 
-    return new NekoAsset(nekoVer, false, forceArch);
+    return new NekoAsset(nekoVer, forceArch);
   }
 
-  constructor(
-    version: string,
-    protected readonly nightly: boolean,
-    forceArch?: string,
-  ) {
+  constructor(version: string, forceArch?: string) {
     super('neko', version, forceArch);
   }
 
@@ -326,43 +263,31 @@ export class NekoAsset extends Asset {
     return this.requireSupported(this.resolve('neko')).cachePlatform;
   }
 
-  // NOTE: example URLs built below (tag uses '-' as separator, e.g. 2.4.1 -> v2-4-1).
-  //   stable:  https://github.com/ShadowEngineTeam/neko/releases/download/v2-4-1/neko-2.4.1-linux64.tar.gz
-  //   nightly: https://build.haxe.org/builds/neko/mac-universal/neko_latest.tar.gz
+  // NOTE: example URL built below (tag uses '-' as separator, e.g. 2.4.1 -> v2-4-1).
+  //   https://github.com/ShadowEngineTeam/neko/releases/download/v2-4-1/neko-2.4.1-linux64.tar.gz
   get downloadUrl() {
-    const resolution = this.requireSupported(this.resolve('neko'));
-    if (resolution.kind === 'nightly') {
-      return `https://build.haxe.org/builds/neko/${resolution.nightlyPathSegment}/${this.fileNameWithoutExt}${this.fileExt}`;
-    }
-
     const tag = `v${this.version.replace(/\./g, '-')}`;
     return super.makeDownloadUrl(`/neko/releases/download/${tag}/${this.fileNameWithoutExt}${this.fileExt}`);
   }
 
   get fileNameWithoutExt() {
     const resolution = this.requireSupported(this.resolve('neko'));
-    if (resolution.kind === 'nightly') {
-      return `neko_${this.version}`;
-    }
-
     return `neko-${this.version}-${resolution.archiveTarget}`;
   }
 
   get isDirectoryNested() {
     return true;
   }
-
-  protected override get isNightly() {
-    return this.nightly;
-  }
 }
 
 export class HaxeAsset extends Asset {
-  constructor(
-    version: string,
-    protected readonly nightly: boolean,
-  ) {
-    const forceArch = version.startsWith('3.') && version < '3.4.4' && os.platform() === 'win32' ? 'ia32' : undefined;
+  constructor(version: string) {
+    const forceArch =
+      version.startsWith('3.') && version < '3.4.4' && os.platform() === 'win32'
+        ? 'ia32'
+        : isWindowsArm()
+          ? 'x64'
+          : undefined;
     super('haxe', version, forceArch);
   }
 
@@ -370,32 +295,18 @@ export class HaxeAsset extends Asset {
     return this.requireSupported(this.resolve('haxe')).cachePlatform;
   }
 
-  // NOTE: example URLs built below.
-  //   stable:  https://github.com/ShadowEngineTeam/haxe/releases/download/4.0.5/haxe-4.0.5-linux64.tar.gz
-  //   nightly: https://build.haxe.org/builds/haxe/mac/haxe_latest.tar.gz
+  // NOTE: example URL built below.
+  //   https://github.com/ShadowEngineTeam/haxe/releases/download/4.0.5/haxe-4.0.5-linux64.tar.gz
   get downloadUrl() {
-    const resolution = this.requireSupported(this.resolve('haxe'));
-    if (resolution.kind === 'nightly') {
-      return `https://build.haxe.org/builds/haxe/${resolution.nightlyPathSegment}/${this.fileNameWithoutExt}${this.fileExt}`;
-    }
-
     return super.makeDownloadUrl(`/haxe/releases/download/${this.version}/${this.fileNameWithoutExt}${this.fileExt}`);
   }
 
   get fileNameWithoutExt() {
     const resolution = this.requireSupported(this.resolve('haxe'));
-    if (resolution.kind === 'nightly') {
-      return `haxe_${this.version}`;
-    }
-
     return `haxe-${this.version}-${resolution.archiveTarget}`;
   }
 
   get isDirectoryNested() {
     return true;
-  }
-
-  protected override get isNightly() {
-    return this.nightly;
   }
 }
