@@ -17,7 +17,7 @@ afterEach(() => {
   vi.clearAllMocks();
 });
 
-const url = 'https://github.com/HaxeFoundation/haxe/releases/download/4.3.7/haxe-4.3.7-linux64.tar.gz';
+const url = 'https://github.com/ShadowEngineTeam/haxe/releases/download/4.3.7/haxe-4.3.7-linux64.tar.gz';
 const dest = '/runner/temp/6b2f6a1e-0f1a-4d0a-9a3f-2b7c5d8e9f01';
 
 function curlCall(index = 0) {
